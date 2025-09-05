@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parent Portal - Grade Predictor</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f4f4f9; color: #333; margin: 2em; }
+        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h1, h2 { text-align: center; color: #4a4a4a; }
+        form { display: flex; flex-direction: column; gap: 15px; }
+        label { font-weight: bold; }
+        input { padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        button { padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        button:hover { background-color: #0056b3; }
+        .result { margin-top: 20px; padding: 15px; background-color: #e2e3e5; border-radius: 4px; text-align: center; font-size: 18px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Student Grade Predictor</h1>
+        <form action="/predict" method="post">
+            <label for="studytime">Study Time (1-4 hours):</label>
+            <input type="number" id="studytime" name="studytime" min="1" max="4" required>
+
+            <label for="failures">Past Failures (0-3):</label>
+            <input type="number" id="failures" name="failures" min="0" max="3" required>
+
+            <label for="absences">Absences (0-75):</label>
+            <input type="number" id="absences" name="absences" min="0" max="75" required>
+
+            <label for="G1">First Period Grade (0-20):</label>
+            <input type="number" id="G1" name="G1" min="0" max="20" required>
+
+            <label for="G2">Second Period Grade (0-20):</label>
+            <input type="number" id="G2" name="G2" min="0" max="20" required>
+
+            <button type="submit">Predict Final Grade</button>
+        </form>
+
+        {% if prediction_text %}
+        <div class="result">
+            {{ prediction_text }}
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

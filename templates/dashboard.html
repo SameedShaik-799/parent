@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parent Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; }
+        .card { margin-bottom: 1.5rem; }
+        .profile-img { width: 120px; height: 120px; object-fit: cover; }
+        .chat-widget { height: 550px; display: flex; flex-direction: column; }
+        .chat-body { flex-grow: 1; overflow-y: auto; }
+        .message-bubble { padding: 0.5rem 1rem; border-radius: 1rem; }
+        .user-bubble { background-color: #0d6efd; color: white; }
+        .bot-bubble { background-color: #e9ecef; color: #212529; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand text-primary fw-bold" href="#">Parent Dashboard</a>
+            <div class="d-flex align-items-center">
+                <div id="google_translate_element" class="me-3"></div>
+                <a href="/logout" class="btn btn-danger">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container py-5">
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <img src="https://i.imgur.com/A5hL42f.png" alt="Profile Photo" class="rounded-circle mb-3 profile-img">
+                        <h4 class="card-title">{{ student.name }}</h4>
+                        <p class="text-muted">Class: {{ student.class }} | Section: {{ student.section }}</p>
+                        <p class="fw-bold">Attendance: <span class="badge bg-success">{{ student.attendance }}</span></p>
+                        <h5 class="mt-4">Academic Marks</h5>
+                        <ul class="list-group list-group-flush">
+                            {% for subject, mark in student.marks.items() %}
+                            <li class="list-group-item d-flex justify-content-between">
+                                <span>{{ subject }}</span>
+                                <strong>{{ mark }}</strong>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title text-center mb-4">Grade Predictor</h4>
+                        <form action="/predict" method="post">
+                            <div class="mb-3">
+                                <label for="studytime" class="form-label">Weekly Study Hours</label>
+                                <input type="number" class="form-control" id="studytime" name="studytime" min="1" max="4" required>
+                                <div class="form-text">1(&lt;2hrs), 2(2-5hrs), 3(5-10hrs), 4(&gt;10hrs)</div>
+                            </div>
+                             <div class="mb-3">
+                                <label for="failures" class="form-label">Number of Past Failures</label>
+                                <input type="number" class="form-control" id="failures" name="failures" min="0" max="3" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="absences" class="form-label">Number of School Absences</label>
+                                <input type="number" class="form-control" id="absences" name="absences" min="0" max="75" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="G1" class="form-label">First Test Grade (0-20)</label>
+                                <input type="number" class="form-control" id="G1" name="G1" min="0" max="20" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="G2" class="form-label">Second Test Grade (0-20)</label>
+                                <input type="number" class="form-control" id="G2" name="G2" min="0" max="20" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Predict Final Grade</button>
+                        </form>
+                        {% if prediction_text %}
+                        <div class="alert alert-info text-center mt-3">{{ prediction_text }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card chat-widget">
+                    <div class="card-header bg-primary text-white">Parent Help Bot</div>
+                    <div class="card-body chat-body" id="chat-body">
+                        <div class="d-flex justify-content-start mb-3">
+                            <div class="bot-bubble">Hello! How can I help you today?</div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-light">
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="user-input" placeholder="Type a message..." onkeyup="checkEnter(event)">
+                            <button class="btn btn-primary" onclick="sendMessage()">➤</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <script type="text/javascript">
+        function speak(text) { if ('speechSynthesis' in window) { const utterance = new SpeechSynthesisUtterance(text); window.speechSynthesis.speak(utterance); } }
+        function sendMessage() {
+            const userInput = document.getElementById('user-input');
+            const message = userInput.value.trim();
+            if (message === '') return;
+            addMessage(message, 'user');
+            userInput.value = '';
+            fetch('/chatbot', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: message })
+            }).then(r => r.json()).then(d => addMessage(d.response, 'bot'));
+        }
+        function addMessage(message, type) {
+            const chatBody = document.getElementById('chat-body');
+            const alignClass = (type === 'user') ? 'justify-content-end' : 'justify-content-start';
+            const bubbleClass = (type === 'user') ? 'user-bubble' : 'bot-bubble';
+            const messageHTML = `<div class="d-flex ${alignClass} mb-3"><div class="message-bubble ${bubbleClass}">${message}</div></div>`;
+            chatBody.innerHTML += messageHTML;
+            chatBody.scrollTop = chatBody.scrollHeight;
+            if (type === 'bot') { speak(message); }
+        }
+        function checkEnter(event) { if (event.key === "Enter") { sendMessage(); } }
+        function googleTranslateElementInit() { new google.translate.TranslateElement({pageLanguage: 'en', includedLanguages: 'en,te,hi,ta'}, 'google_translate_element'); }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+</body>
+</html>
